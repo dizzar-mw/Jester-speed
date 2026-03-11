@@ -1,15 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Comic Racer</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+</head>
 
-<!doctype html>
-<html>
-  <head>
-    <title>Jester Speed // race Game</title>
-  </head>
+<body>
 
+<div id="startScreen">
+<h1>COMIC RACER</h1>
 
-  <body>
-this will be a funny game inu ma fanna.,,,😂😎
+<input id="playerName" placeholder="Enter your name">
 
+<button onclick="startGame()">START GAME</button>
 
-    
-  </body>
+<p id="greeting"></p>
+</div>
+
+<div id="gameUI" class="hidden">
+
+<div class="hud">
+<span id="username"></span>
+<span>Score: <span id="score">0</span></span>
+<span>High Score: <span id="highScore">0</span></span>
+</div>
+
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+
+</div>
+
+<script src="game.js"></script>
+
+</body>
 </html>
