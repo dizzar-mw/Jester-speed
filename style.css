@@ -56,3 +56,25 @@ border:5px solid aqua;
 display:block;
 margin:auto;
 }
+
+/* Android Controls */
+
+.controls{
+display:flex;
+justify-content:space-between;
+width:300px;
+margin:20px auto;
+}
+
+.controls button{
+width:120px;
+height:80px;
+font-size:40px;
+background:orange;
+border:4px solid aqua;
+border-radius:15px;
+}
+
+.controls button:active{
+background:purple;
+}
