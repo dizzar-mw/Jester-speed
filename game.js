@@ -136,3 +136,23 @@ document.getElementById("score").textContent = score;
 requestAnimationFrame(gameLoop);
 
 }
+
+
+
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+
+leftBtn.addEventListener("touchstart", ()=>{
+carX -= 30;
+});
+
+rightBtn.addEventListener("touchstart", ()=>{
+carX += 30;
+});
+
+/* also keep keyboard support */
+document.addEventListener("keydown", e=>{
+if(e.key === "ArrowLeft") carX -= 30;
+if(e.key === "ArrowRight") carX += 30;
+});
+
