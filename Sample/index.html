@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Comic Racer - Python Edition</title>
+    
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+    
+    <style>
+        body { background: black; color: white; font-family: 'Bangers', cursive; text-align: center; margin: 0; overflow: hidden; }
+        h1 { color: orange; font-size: 50px; text-shadow: 3px 3px purple; margin: 10px; }
+        .hidden { display: none; }
+        #startScreen { padding-top: 50px; }
+        input { padding: 10px; font-size: 18px; border: 3px solid aqua; background: black; color: white; width: 80%; max-width: 300px; }
+        button { padding: 12px 30px; font-size: 20px; background: purple; border: none; color: white; margin-top: 15px; border-radius: 10px; cursor: pointer; }
+        .hud { display: flex; justify-content: space-around; background: purple; padding: 10px; font-size: 18px; }
+        canvas { background: #000; border: 4px solid aqua; display: block; margin: 10px auto; max-width: 95vw; max-height: 65vh; }
+        .controls { display: flex; justify-content: center; gap: 20px; padding-bottom: 20px; }
+        .controls button { width: 100px; height: 70px; font-size: 30px; background: orange; border: 3px solid aqua; margin: 0; user-select: none; }
+    </style>
+</head>
+<body>
+
+<div id="startScreen">
+    <h1>COMIC RACER</h1>
+    <p>Python Engine Enabled</p>
+    <input id="playerName" placeholder="Enter name..." maxlength="10">
+    <br>
+    <button id="startBtn">START GAME</button>
+</div>
+
+<div id="gameUI" class="hidden">
+    <div class="hud">
+        <span id="usernameDisplay"></span>
+        <span>Score: <span id="scoreDisplay">0</span></span>
+    </div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div class="controls">
+        <button id="leftBtn">⬅</button>
+        <button id="rightBtn">➡</button>
+    </div>
+</div>
+
+<script type="py">
+from pyodide.ffi import create_proxy
+from js import document, window, Image, requestAnimationFrame
+
+# Game Setup
+canvas = document.getElementById("gameCanvas")
+ctx = canvas.getContext("2d")
+score_display = document.getElementById("scoreDisplay")
+
+car_x = 175
+car_width = 50
+car_height = 90
+obstacles = []
+score = 0
+speed = 5
+game_running = False
+move_left = False
+move_right = False
+
+# Load Images
+player_img = Image.new()
+player_img.src = "character.jpg"
+enemy_img = Image.new()
+enemy_img.src = "enermy.jpg"
+
+def start_game(event):
+    global game_running
+    name = document.getElementById("playerName").value
+    if not name:
+        window.alert("Enter your name!")
+        return
+    
+    document.getElementById("usernameDisplay").innerText = name
+    document.getElementById("startScreen").classList.add("hidden")
+    document.getElementById("gameUI").classList.remove("hidden")
+    
+    game_running = True
+    requestAnimationFrame(create_proxy(game_loop))
+
+def game_loop(time):
+    global car_x, score, speed, game_running
+    
+    if not game_running:
+        return
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    # Move Player
+    if move_left and car_x > 0: car_x -= 8
+    if move_right and car_x < canvas.width - car_width: car_x += 8
+
+    # Draw Player (Handles low-quality image loading)
+    if player_img.complete:
+        ctx.drawImage(player_img, car_x, 480, car_width, car_height)
+    else:
+        ctx.fillStyle = "orange"
+        ctx.fillRect(car_x, 480, car_width, car_height)
+
+    # Draw & Move Obstacles
+    import random
+    if random.random() < 0.02:
+        obstacles.append({'x': random.random() * (canvas.width - car_width), 'y': -100})
+
+    for o in obstacles[:]:
+        if enemy_img.complete:
+            ctx.drawImage(enemy_img, o['x'], o['y'], car_width, car_height)
+        else:
+            ctx.fillStyle = "red"
+            ctx.fillRect(o['x'], o['y'], car_width, car_height)
+        
+        o['y'] += speed
+        
+        # Collision
+        if car_x < o['x'] + car_width and car_x + car_width > o['x'] and \
+           480 < o['y'] + car_height and 480 + car_height > o['y']:
+            game_running = False
+            window.alert(f"Game Over! Score: {int(score)}")
+            window.location.reload()
+
+        if o['y'] > canvas.height:
+            obstacles.remove(o)
+
+    score += 1
+    speed += 0.001
+    score_display.innerText = str(int(score))
+    
+    requestAnimationFrame(create_proxy(game_loop))
+
+# Movement Control Functions
+def set_left(val): 
+    global move_left
+    move_left = val
+def set_right(val): 
+    global move_right
+    move_right = val
+
+# Attach Events
+document.getElementById("startBtn").onclick = create_proxy(start_game)
+
+# Mobile Controls
+def handle_left_down(e): set_left(True)
+def handle_left_up(e): set_left(False)
+def handle_right_down(e): set_right(True)
+def handle_right_up(e): set_right(False)
+
+document.getElementById("leftBtn").onmousedown = create_proxy(handle_left_down)
+document.getElementById("leftBtn").onmouseup = create_proxy(handle_left_up)
+document.getElementById("rightBtn").onmousedown = create_proxy(handle_right_down)
+document.getElementById("rightBtn").onmouseup = create_proxy(handle_right_up)
+
+# Keyboard support
+def on_keydown(e):
+    if e.key == "ArrowLeft": set_left(True)
+    if e.key == "ArrowRight": set_right(True)
+def on_keyup(e):
+    if e.key == "ArrowLeft": set_left(False)
+    if e.key == "ArrowRight": set_right(False)
+
+window.addEventListener("keydown", create_proxy(on_keydown))
+window.addEventListener("keyup", create_proxy(on_keyup))
+</script>
+
+</body>
+</html>
