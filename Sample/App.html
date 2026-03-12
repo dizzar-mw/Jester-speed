@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Comic Racer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        body { background: black; color: white; font-family: 'Bangers', cursive; text-align: center; margin: 0; overflow: hidden; }
+        h1 { color: orange; font-size: 50px; text-shadow: 3px 3px purple; margin: 10px; }
+        .hidden { display: none; }
+        #startScreen { padding-top: 50px; }
+        input { padding: 10px; font-size: 18px; border: 3px solid aqua; background: black; color: white; width: 80%; max-width: 300px; }
+        button { padding: 12px 30px; font-size: 20px; background: purple; border: none; color: white; margin-top: 15px; border-radius: 10px; }
+        .hud { display: flex; justify-content: space-around; background: purple; padding: 10px; font-size: 18px; }
+        canvas { background: #000; border: 4px solid aqua; display: block; margin: 10px auto; max-width: 95vw; max-height: 70vh; }
+        .controls { display: flex; justify-content: center; gap: 20px; padding-bottom: 20px; }
+        .controls button { width: 100px; height: 70px; font-size: 30px; background: orange; border: 3px solid aqua; margin: 0; }
+        .controls button:active { background: purple; }
+    </style>
+</head>
+<body>
+
+<div id="startScreen">
+    <h1>COMIC RACER</h1>
+    <input id="playerName" placeholder="Enter name..." maxlength="10">
+    <br>
+    <button onclick="startGame()">START GAME</button>
+</div>
+
+<div id="gameUI" class="hidden">
+    <div class="hud">
+        <span id="username"></span>
+        <span>Score: <span id="scoreDisplay">0</span></span>
+        <span>High: <span id="highScore">0</span></span>
+    </div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div class="controls">
+        <button id="leftBtn" onmousedown="moveLeft=true" onmouseup="moveLeft=false" ontouchstart="event.preventDefault(); moveLeft=true" ontouchend="event.preventDefault(); moveLeft=false">⬅</button>
+        <button id="rightBtn" onmousedown="moveRight=true" onmouseup="moveRight=false" ontouchstart="event.preventDefault(); moveRight=true" ontouchend="event.preventDefault(); moveRight=false">➡</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Game Settings
+    let carX = 175;
+    const carWidth = 50;
+    const carHeight = 90;
+    let obstacles = [];
+    let score = 0;
+    let speed = 5;
+    let gameRunning = false;
+    let moveLeft = false;
+    let moveRight = false;
+
+    // Load Images
+    const playerImg = new Image();
+    playerImg.src = 'character.jpg'; //
+    const enemyImg = new Image();
+    enemyImg.src = 'enermy.jpg';     //
+
+    function startGame() {
+        const nameInput = document.getElementById("playerName").value;
+        if (!nameInput) return alert("Enter your name!");
+        
+        document.getElementById("username").textContent = nameInput;
+        document.getElementById("startScreen").classList.add("hidden");
+        document.getElementById("gameUI").classList.remove("hidden");
+        
+        document.getElementById("highScore").textContent = localStorage.getItem("highScore") || 0;
+        
+        gameRunning = true;
+        gameLoop();
+    }
+
+    function drawCar() {
+        // Fallback: If image fails to load, draw an orange box
+        if (playerImg.complete && playerImg.naturalWidth !== 0) {
+            ctx.drawImage(playerImg, carX, 480, carWidth, carHeight);
+        } else {
+            ctx.fillStyle = "orange";
+            ctx.fillRect(carX, 480, carWidth, carHeight);
+        }
+    }
+
+    function drawObstacles() {
+        obstacles.forEach((o, i) => {
+            if (enemyImg.complete && enemyImg.naturalWidth !== 0) {
+                ctx.drawImage(enemyImg, o.x, o.y, carWidth, carHeight);
+            } else {
+                ctx.fillStyle = "red";
+                ctx.fillRect(o.x, o.y, carWidth, carHeight);
+            }
+            o.y += speed;
+            if (o.y > canvas.height) obstacles.splice(i, 1);
+
+            // Collision Detection
+            if (carX < o.x + carWidth && carX + carWidth > o.x && 
+                480 < o.y + carHeight && 480 + carHeight > o.y) {
+                gameOver();
+            }
+        });
+    }
+
+    function gameOver() {
+        gameRunning = false;
+        const high = localStorage.getItem("highScore") || 0;
+        if (score > high) localStorage.setItem("highScore", score);
+        alert("CRASHED! Score: " + score);
+        location.reload();
+    }
+
+    function gameLoop() {
+        if (!gameRunning) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (moveLeft && carX > 0) carX -= 8;
+        if (moveRight && carX < canvas.width - carWidth) carX += 8;
+
+        drawCar();
+        drawObstacles();
+
+        if (Math.random() < 0.02) {
+            obstacles.push({ x: Math.random() * (canvas.width - carWidth), y: -100 });
+        }
+
+        score++;
+        speed += 0.001;
+        document.getElementById("scoreDisplay").textContent = score;
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Keyboard Controls
+    window.addEventListener("keydown", e => {
+        if(e.key === "ArrowLeft") moveLeft = true;
+        if(e.key === "ArrowRight") moveRight = true;
+    });
+    window.addEventListener("keyup", e => {
+        if(e.key === "ArrowLeft") moveLeft = false;
+        if(e.key === "ArrowRight") moveRight = false;
+    });
+</script>
+
+</body>
+</html>
